@@ -1,8 +1,7 @@
 from PIL import Image, ImageTransform, ImageEnhance
 import masks
-import sys
 import os
-
+import argparse
 
 class TransformImage:
 
@@ -172,10 +171,10 @@ def main(input_path, output_path, strength = 0.25):
         img = TransformImage(input_path, 1, strength)
     except FileNotFoundError:
         print("Invalid path")
-        sys.exit(1)
+        return
     except Exception as e:
         print(e)
-        sys.exit(1)
+        return
     for i, v in masks.mask_list.items():
         compose_images(img, v)
     output_imgs = {i: compose_images(img, v) for i, v in masks.mask_list.items()}
@@ -189,14 +188,15 @@ def main(input_path, output_path, strength = 0.25):
             v.save(f"{output_path}/{i}/" + f"{ind}" + ".png")
 
 if __name__ == '__main__':
-    if len(sys.argv) < 4:
-        print("Usage: python lib.py <input_path> <output_dir> <strength>","suggested strength: 0.25", sep="\n")
-        sys.exit(1)
-    try:
-        strength = float(sys.argv[3])
-    except ValueError:
-        print("Invalid strength")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description='Process some images')
+    parser.add_argument('-i', '--input-path', type=str, required=True, help='Path to the input file')
+    parser.add_argument('-o', '--output-dir', type=str, required=True, help='Directory to save the output')
+    parser.add_argument('-s', '--strength', type=float, default=0.25, help='Strength value (suggested: 0.25)')
+    parser.add_argument('-d', '--diagonal', type=bool, default=False, help='Output diagonal images')
+    parser.add_argument('-n', '--diagonal-on-slopes', type=bool, default=False, help='Output diagonal images on slopes')
+    parser.add_argument('-r', '--resolution', type=int, default=1, help='Resolution of the output image')
+    args = parser.parse_args()
+
     for i in range(4):
-        os.makedirs(f"{sys.argv[2]}/{i}/", exist_ok=True)
-    main(sys.argv[1], sys.argv[2], strength)
+        os.makedirs(f"{args.output_dir}/{i}/", exist_ok=True)
+    main(args.input_path, args.output_dir, args.strength)
