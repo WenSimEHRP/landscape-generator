@@ -141,7 +141,7 @@ class TransformImage:
         return a
 
 
-def compose_images(img: TransformImage, mask, diagonal_slopes=False):
+def compose_images(img: TransformImage, mask, diagonal_slopes=False, no_flat=False):
     d = {}
     t = {}
     for i in range(len(next(iter(img.imgs.values())))):
@@ -151,7 +151,6 @@ def compose_images(img: TransformImage, mask, diagonal_slopes=False):
             c = i
             if diagonal_slopes and "cliff" in mi:
                 if "lower" in mv or "upper" in mv:
-                    print("yes")
                     c += 3
                 c = (c + 4) % 8
             a = img.imgs[mi][c].copy().convert("RGBA")
@@ -161,24 +160,37 @@ def compose_images(img: TransformImage, mask, diagonal_slopes=False):
                 a = a.crop(bbox)
             for n in ("right", "left", "upper", "lower"):
                 if n in mv:
-                    compose[n] = a
+                    compose[n] = (a, "flat" in mi)
         t[i] = compose
 
     for i, compose in t.items():
-
         if "right" in compose and "left" in compose:
-            new_width = compose["right"].width + compose["left"].width
-            new_height = max(compose["right"].height, compose["left"].height)
+            right = compose["right"][0]
+            left = compose["left"][0]
+            if no_flat:
+                if compose["right"][1]:
+                    right = Image.new("RGBA", right.size, (0, 0, 0, 0))
+                if compose["left"][1]:
+                    left = Image.new("RGBA", left.size, (0, 0, 0, 0))
+            new_width = right.width + left.width
+            new_height = max(right.height, left.height)
             new_img = Image.new("RGBA", (new_width, new_height))
-            new_img.paste(compose["left"], (0, 0))
-            new_img.paste(compose["right"], (compose["left"].width, 0))
+            new_img.paste(left, (0, 0))
+            new_img.paste(right, (left.width, 0))
             d[i] = new_img
         elif "upper" in compose and "lower" in compose:
-            new_width = max(compose["upper"].width, compose["lower"].width)
-            new_height = compose["upper"].height + compose["lower"].height - 1
+            upper = compose["upper"][0]
+            lower = compose["lower"][0]
+            if no_flat:
+                if compose["upper"][1]:
+                    upper = Image.new("RGBA", upper.size, (0, 0, 0, 0))
+                if compose["lower"][1]:
+                    lower = Image.new("RGBA", lower.size, (0, 0, 0, 0))
+            new_width = max(upper.width, lower.width)
+            new_height = upper.height + lower.height - 1
             new_img = Image.new("RGBA", (new_width, new_height))
-            new_img.paste(compose["upper"], (0, 0))
-            new_img.paste(compose["lower"], (0, compose["upper"].height - 1))
+            new_img.paste(upper, (0, 0))
+            new_img.paste(lower, (0, upper.height - 1))
             d[i] = new_img
         else:
             raise ValueError("Invalid mask")
@@ -198,7 +210,7 @@ def main(args):
         return
     output_imgs = {
         **{
-            i: compose_images(img, v, args.diagonal_on_slopes)
+            i: compose_images(img, v, args.diagonal_on_slopes, args.no_flat)
             for i, v in masks.mask_list.items()
         },
         **{masks.order_translation[i]: v for i, v in img.imgs.items()},
@@ -251,6 +263,13 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-r", "--resolution", type=int, default=1, help="Resolution of the output image"
+    )
+    parser.add_argument(
+        "-f",
+        "--no-flat",
+        action="store_true",
+        default=False,
+        help="Do not output flat land textures on combined sprites",
     )
     args = parser.parse_args()
 
