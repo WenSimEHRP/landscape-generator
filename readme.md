@@ -7,6 +7,9 @@ Usage:
 ```sh
 python3 landgen.py [-h] -i <INPUT_PATH> -o <OUTPUT_DIR> [-s <STRENGTH>] [-d] [-n] [-r <RESOLUTION>]
 ```
+The input should be a simple square image, like this one:
+
+![input image](./test.png)
 
 - `-i INPUT_PATH, --input-path`: Path to the input file
 - `-o OUTPUT_DIR, --output-dir`: Directory to save the output
