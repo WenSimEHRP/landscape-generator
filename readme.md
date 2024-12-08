@@ -1,12 +1,13 @@
 # Landscape Generator
 
-A simple command-line landscape generator for use with OpenTTD.
+A simple command-line landscape generator for use with OpenTTD, designed for minimum manual sprite adjustments.
 
 Usage:
 
 ```sh
 python3 landgen.py [-h] -i <INPUT_PATH> -o <OUTPUT_DIR> [-s <STRENGTH>] [-d] [-n] [-r <RESOLUTION>]
 ```
+
 The input should be a simple square image, like this one:
 
 ![input image](./test.png)
